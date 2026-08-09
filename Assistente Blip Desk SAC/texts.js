@@ -5,7 +5,7 @@ const ModelosProtocolo = {
       abertura: "Cliente entrou em contato",
       fechamento: ``
     },
-    "INTERNET LENTA": {
+    "Lentidão": {
       abertura: "Cliente entrou em contato informando estar com a conexão lenta",
       fechamento: `Modelo Roteador: 
 Firmware:
@@ -21,12 +21,9 @@ Após os procedimentos realizados o cliente confirmou a normalização.`
 ONU: 
 Configurado: 
 Sinal de Fibra: 
-Com Histórico de Desconexão: Sim
 Status de leds: PON: Apagada; LOS: Ligada
 
-1. PON Apagada. Falta de sinal na ONU
-2. Visita para correção de sinal de fibra
-3. Roteador ou fonte que não ligou`
+PON Apagada. Falta de sinal na ONU`
     },
     "TROCA DE SENHA": {
       abertura: "O titular entrou em contato solicitando sua alteração de senha.",
@@ -66,8 +63,6 @@ Atendimento Concluído.`
     },
     "ALTERAÇÃO DE VENCIMENTO": {
       abertura: `Cliente solicita alterar a data de vencimento. Ciente de que não poderá realizar a troca com boleto vencido. Ciente de que a troca poderá ser gerado valor proporcional.
-Disponibilidade de receber contato:
-Contatos atuais:
 Cliente escolheu a data:
 Encaminhado ao setor responsável para dar continuidade ao seu atendimento.`,
       fechamento: ``
@@ -80,31 +75,15 @@ Contatos atuais:`,
 Encaminhado ao setor responsável para dar continuidade ao atendimento.`
     },
     "MUDANÇA DE TITULARIDADE": {
-      abertura: `Cliente solicita Alteração de Titularidade.
-Titular atual:
-N° de Contrato a ser cedido:
-Equipamento muda de endereço: Sim( ) Não( )
-Novo titular:
-Contato 1.: Contato 2.:
-Endereço:
-Email:
-Disponibilidade de receber contato:
-Contatos atuais:`,
+      abertura: `Cliente solicita Alteração de Titularidade.`,
       fechamento: ``
     },
-    "TROCA DE ENDEREÇO": {
-      abertura: `Cliente entrou em contato solicitando troca de endereço
-Novo endereço:
-Disponibilidade de receber contato:
-Contatos atuais:`,
+    "Reinstalação": {
+      abertura: `Cliente entrou em contato solicitando mudança de `,
       fechamento: ``
     },
     "APLICATIVO DA CENTRAL": {
-      abertura: `Solicitante:
-Telefone:
-Protocolo:
-
-Cliente entrou em contato solicitando senha de acesso ao aplicativo.`,
+      abertura: `Cliente entrou em contato solicitando senha de acesso ao aplicativo.`,
       fechamento: `Realizada a confirmação de titularidade: RG, CPF, data de nascimento e endereço.
 Cadastrada a senha no sistema e informado ao cliente.
 Após cadastrar senha e passar as orientações, o cliente confirmou o acesso ao aplicativo.
