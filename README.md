@@ -33,7 +33,7 @@ Ela unifica duas ferramentas em uma só:
 - Possui alternância entre tema escuro e tema claro.
 - O tema claro foi ajustado para combinar melhor com o visual do Blip.
 
-## Instalação
+## Instalação no Chrome ou Edge
 
 1. Baixe ou clone este repositório.
 2. Abra o Chrome ou Edge.
@@ -46,6 +46,17 @@ Ela unifica duas ferramentas em uma só:
 5. Clique em **Carregar sem compactação**.
 6. Selecione a pasta da extensão.
 7. Abra ou atualize o Blip Desk.
+
+## Instalação no Firefox
+
+1. Baixe ou clone este repositório.
+2. Abra o Firefox.
+3. Acesse `about:debugging#/runtime/this-firefox`.
+4. Clique em **Carregar extensão temporária**.
+5. Selecione o arquivo `manifest.json` dentro da pasta da extensão.
+6. Abra ou atualize o Blip Desk.
+
+Observação: no Firefox, esse método instala a extensão apenas temporariamente. Ela pode ser removida ao fechar o navegador, então será necessário carregá-la novamente pelo `about:debugging` quando precisar usar outra vez.
 
 ## Como Usar
 
