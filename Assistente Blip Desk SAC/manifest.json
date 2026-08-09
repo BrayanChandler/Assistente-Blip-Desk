@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Assistente Blip Desk - Brayan",
+  "version": "1.0",
+  "author": "Brayan",
+  "description": "Apresentação automática e painel de protocolo para o Blip Desk.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "notifications",
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://*.blip.ai/*",
+    "https://*.desk.blip.ai/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.blip.ai/*",
+        "https://*.desk.blip.ai/*"
+      ],
+      "js": [
+        "texts.js",
+        "protocolo.js",
+        "apresentacao.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
