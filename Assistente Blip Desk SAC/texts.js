@@ -5,7 +5,7 @@ const ModelosProtocolo = {
       abertura: "Cliente entrou em contato",
       fechamento: ``
     },
-    "Lentidão": {
+    "LENTIDÃO": {
       abertura: "Cliente entrou em contato informando estar com a conexão lenta",
       fechamento: `Modelo Roteador: 
 Firmware:
@@ -15,7 +15,7 @@ Consta histórico de desconexões: Não
 
 Após os procedimentos realizados o cliente confirmou a normalização.`
     },
-    "SEM INTERNET": {
+    "OFFLINE": {
       abertura: "Cliente entrou em contato informando sem internet",
       fechamento: `ROTEADOR/ ONT: 
 ONU: 
@@ -78,7 +78,7 @@ Encaminhado ao setor responsável para dar continuidade ao atendimento.`
       abertura: `Cliente solicita Alteração de Titularidade.`,
       fechamento: ``
     },
-    "Reinstalação": {
+    "REINSTALAÇÃO": {
       abertura: `Cliente entrou em contato solicitando mudança de `,
       fechamento: ``
     },

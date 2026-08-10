@@ -18,27 +18,38 @@ const STORAGE_KEY_HISTORICO = "brayan_historico_tickets";
 let mensagemAutomatica = MENSAGEM_PADRAO;
 
 function getExtStorage() {
-  return globalThis.chrome?.storage?.sync || globalThis.browser?.storage?.sync || null;
+  if (globalThis.browser?.storage?.sync) {
+    return { area: globalThis.browser.storage.sync, mode: "promise" };
+  }
+  if (globalThis.chrome?.storage?.sync) {
+    return { area: globalThis.chrome.storage.sync, mode: "callback" };
+  }
+  return null;
 }
 
-function storageGet(defaults) {
-  const storage = getExtStorage();
-  if (!storage) return Promise.resolve(defaults);
+function getLastStorageError() {
+  return globalThis.chrome?.runtime?.lastError || globalThis.browser?.runtime?.lastError || null;
+}
 
-  return new Promise((resolve) => {
-    try {
-      const retorno = storage.get(defaults, (items) => {
-        const erro = globalThis.chrome?.runtime?.lastError;
+async function storageGet(defaults) {
+  const storage = getExtStorage();
+  if (!storage) return defaults;
+
+  try {
+    if (storage.mode === "promise") {
+      return (await storage.area.get(defaults)) || defaults;
+    }
+
+    return await new Promise((resolve) => {
+      storage.area.get(defaults, (items) => {
+        const erro = getLastStorageError();
         resolve(erro ? defaults : (items || defaults));
       });
-      if (retorno && typeof retorno.then === "function") {
-        retorno.then((items) => resolve(items || defaults)).catch(() => resolve(defaults));
-      }
-    } catch (erro) {
-      console.warn("⚠️ Erro ao acessar storage da extensão:", erro);
-      resolve(defaults);
-    }
-  });
+    });
+  } catch (erro) {
+    console.warn("⚠️ Erro ao acessar storage da extensão:", erro);
+    return defaults;
+  }
 }
 
 async function carregarMensagemAutomatica() {
@@ -47,24 +58,25 @@ async function carregarMensagemAutomatica() {
   return mensagemAutomatica;
 }
 
-function storageSet(values) {
+async function storageSet(values) {
   const storage = getExtStorage();
-  if (!storage) return Promise.resolve(false);
+  if (!storage) return false;
 
-  return new Promise((resolve) => {
-    try {
-      const retorno = storage.set(values, () => {
-        const erro = globalThis.chrome?.runtime?.lastError;
-        resolve(!erro);
-      });
-      if (retorno && typeof retorno.then === "function") {
-        retorno.then(() => resolve(true)).catch(() => resolve(false));
-      }
-    } catch (erro) {
-      console.warn("⚠️ Erro ao salvar no storage da extensão:", erro);
-      resolve(false);
+  try {
+    if (storage.mode === "promise") {
+      await storage.area.set(values);
+      return true;
     }
-  });
+
+    return await new Promise((resolve) => {
+      storage.area.set(values, () => {
+        resolve(!getLastStorageError());
+      });
+    });
+  } catch (erro) {
+    console.warn("⚠️ Erro ao salvar no storage da extensão:", erro);
+    return false;
+  }
 }
 
 async function salvarTicketNoHistorico(ticket) {
@@ -79,7 +91,7 @@ async function salvarTicketNoHistorico(ticket) {
   await storageSet({ [STORAGE_KEY_HISTORICO]: novoHistorico });
 }
 
-const storageChanges = globalThis.chrome?.storage?.onChanged || globalThis.browser?.storage?.onChanged;
+const storageChanges = globalThis.browser?.storage?.onChanged || globalThis.chrome?.storage?.onChanged;
 if (storageChanges) {
   storageChanges.addListener((changes, areaName) => {
     if ((areaName === "sync" || areaName === "local") && changes[STORAGE_KEY_MENSAGEM]) {

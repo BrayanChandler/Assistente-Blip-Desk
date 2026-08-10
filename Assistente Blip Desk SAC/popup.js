@@ -11,32 +11,58 @@ const restaurarBtn = document.getElementById("restaurar");
 const salvarPadraoBtn = document.getElementById("salvarPadrao");
 const historicoTickets = document.getElementById("historicoTickets");
 
-function getExtStorage() { return globalThis.chrome?.storage?.sync || globalThis.browser?.storage?.sync || null; }
-function storageGet(defaults) {
+function getExtStorage() {
+  if (globalThis.browser?.storage?.sync) {
+    return { area: globalThis.browser.storage.sync, mode: "promise" };
+  }
+  if (globalThis.chrome?.storage?.sync) {
+    return { area: globalThis.chrome.storage.sync, mode: "callback" };
+  }
+  return null;
+}
+
+function getLastStorageError() {
+  return globalThis.chrome?.runtime?.lastError || globalThis.browser?.runtime?.lastError || null;
+}
+
+async function storageGet(defaults) {
   const storage = getExtStorage();
-  if (!storage) return Promise.resolve(defaults);
-  return new Promise((resolve) => {
-    try {
-      const retorno = storage.get(defaults, (items) => {
-        const erro = globalThis.chrome?.runtime?.lastError;
+  if (!storage) return defaults;
+
+  try {
+    if (storage.mode === "promise") {
+      return (await storage.area.get(defaults)) || defaults;
+    }
+
+    return await new Promise((resolve) => {
+      storage.area.get(defaults, (items) => {
+        const erro = getLastStorageError();
         resolve(erro ? defaults : (items || defaults));
       });
-      if (retorno && typeof retorno.then === "function") retorno.then((items) => resolve(items || defaults)).catch(() => resolve(defaults));
-    } catch { resolve(defaults); }
-  });
+    });
+  } catch {
+    return defaults;
+  }
 }
-function storageSet(values) {
+
+async function storageSet(values) {
   const storage = getExtStorage();
-  if (!storage) return Promise.resolve(false);
-  return new Promise((resolve) => {
-    try {
-      const retorno = storage.set(values, () => {
-        const erro = globalThis.chrome?.runtime?.lastError;
-        resolve(!erro);
+  if (!storage) return false;
+
+  try {
+    if (storage.mode === "promise") {
+      await storage.area.set(values);
+      return true;
+    }
+
+    return await new Promise((resolve) => {
+      storage.area.set(values, () => {
+        resolve(!getLastStorageError());
       });
-      if (retorno && typeof retorno.then === "function") retorno.then(() => resolve(true)).catch(() => resolve(false));
-    } catch { resolve(false); }
-  });
+    });
+  } catch {
+    return false;
+  }
 }
 function mostrarStatus(texto, destaque = false) {
   statusEl.textContent = texto;

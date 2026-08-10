@@ -15,6 +15,11 @@
     "https://*.blip.ai/*",
     "https://*.desk.blip.ai/*"
   ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "assistente-blip-desk-brayan@example.com"
+    }
+  },
   "content_scripts": [
     {
       "matches": [
