@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <!-- Metadados, estilos e configurações visuais do popup da extensão. -->
   <meta charset="UTF-8">
   <style>
+    /* Estilos do popup: definem layout, cores, espaçamentos e estados visuais sem alterar a lógica. */
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    /* Corpo principal da janela do popup. */
+body {
       width: 370px;
       background: #111827;
       color: #e5e7eb;
@@ -31,7 +34,8 @@
     .painel-aba.ativa { display: block; }
     p { font-size: 13px; color: #9ca3af; margin-bottom: 12px; line-height: 1.45; }
     label, .section-title { display: block; font-size: 12px; font-weight: 800; color: #86efac; margin-bottom: 7px; letter-spacing: 0.2px; }
-    textarea {
+    /* Área de texto usada para exibir ou editar mensagens maiores. */
+textarea {
       width: 100%;
       min-height: 118px;
       resize: vertical;
@@ -75,6 +79,7 @@
   </style>
 </head>
 <body>
+  <!-- Interface visível do popup: campos, botões e áreas que o JavaScript controla pelo DOM. -->
   <div class="topo">
     <div class="topo-linha">
       <h2>Assistente Blip Desk</h2>
@@ -119,7 +124,8 @@
     </div>
   </div>
 
-  <div class="footer">Criado por Brayan - BRYAN-ORIG-12de19360097a0ce</div>
+  <div class="footer">Criado por Brayan · BRYAN-ORIG-12de19360097a0ce</div>
+  <!-- Carrega o script que controla eventos, armazenamento e comunicação com a página. -->
   <script src="popup.js"></script>
 </body>
 </html>

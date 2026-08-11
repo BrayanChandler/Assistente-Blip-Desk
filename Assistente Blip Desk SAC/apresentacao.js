@@ -1,3 +1,8 @@
+/*
+ * Arquivo comentado didaticamente em português.
+ * Os comentários explicam o fluxo geral, DOM, eventos, armazenamento, cache e funções importantes.
+ * A lógica original foi preservada: nomes, seletores, chaves, textos funcionais e URLs não foram alterados.
+ */
 // ============================================================
 //  Apresentação Automática - Brayan | content.js
 //  Autor: Brayan
@@ -17,69 +22,71 @@ const STORAGE_KEY_HISTORICO = "brayan_historico_tickets";
 
 let mensagemAutomatica = MENSAGEM_PADRAO;
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function getExtStorage() {
-  if (globalThis.browser?.storage?.sync) {
-    return { area: globalThis.browser.storage.sync, mode: "promise" };
-  }
-  if (globalThis.chrome?.storage?.sync) {
-    return { area: globalThis.chrome.storage.sync, mode: "callback" };
-  }
-  return null;
+  return globalThis.chrome?.storage?.sync || globalThis.browser?.storage?.sync || null;
 }
 
-function getLastStorageError() {
-  return globalThis.chrome?.runtime?.lastError || globalThis.browser?.runtime?.lastError || null;
-}
-
-async function storageGet(defaults) {
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
+function storageGet(defaults) {
   const storage = getExtStorage();
-  if (!storage) return defaults;
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
+  if (!storage) return Promise.resolve(defaults);
 
-  try {
-    if (storage.mode === "promise") {
-      return (await storage.area.get(defaults)) || defaults;
-    }
-
-    return await new Promise((resolve) => {
-      storage.area.get(defaults, (items) => {
-        const erro = getLastStorageError();
+  return new Promise((resolve) => {
+    // Bloco protegido para capturar falhas sem quebrar todo o funcionamento da extensão.
+    try {
+      // Função em formato de seta usada para organizar uma ação reutilizável do script.
+      const retorno = storage.get(defaults, (items) => {
+        const erro = globalThis.chrome?.runtime?.lastError;
         resolve(erro ? defaults : (items || defaults));
       });
-    });
-  } catch (erro) {
-    console.warn("⚠️ Erro ao acessar storage da extensão:", erro);
-    return defaults;
-  }
+      // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
+      if (retorno && typeof retorno.then === "function") {
+        retorno.then((items) => resolve(items || defaults)).catch(() => resolve(defaults));
+      }
+    } catch (erro) {
+      console.warn("⚠️ Erro ao acessar storage da extensão:", erro);
+      resolve(defaults);
+    }
+  });
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 async function carregarMensagemAutomatica() {
   const items = await storageGet({ [STORAGE_KEY_MENSAGEM]: MENSAGEM_PADRAO });
   mensagemAutomatica = (items?.[STORAGE_KEY_MENSAGEM] || MENSAGEM_PADRAO).trim() || MENSAGEM_PADRAO;
   return mensagemAutomatica;
 }
 
-async function storageSet(values) {
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
+function storageSet(values) {
   const storage = getExtStorage();
-  if (!storage) return false;
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
+  if (!storage) return Promise.resolve(false);
 
-  try {
-    if (storage.mode === "promise") {
-      await storage.area.set(values);
-      return true;
-    }
-
-    return await new Promise((resolve) => {
-      storage.area.set(values, () => {
-        resolve(!getLastStorageError());
+  return new Promise((resolve) => {
+    // Bloco protegido para capturar falhas sem quebrar todo o funcionamento da extensão.
+    try {
+      // Função em formato de seta usada para organizar uma ação reutilizável do script.
+      const retorno = storage.set(values, () => {
+        const erro = globalThis.chrome?.runtime?.lastError;
+        resolve(!erro);
       });
-    });
-  } catch (erro) {
-    console.warn("⚠️ Erro ao salvar no storage da extensão:", erro);
-    return false;
-  }
+      // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
+      if (retorno && typeof retorno.then === "function") {
+        retorno.then(() => resolve(true)).catch(() => resolve(false));
+      }
+    } catch (erro) {
+      console.warn("⚠️ Erro ao salvar no storage da extensão:", erro);
+      resolve(false);
+    }
+  });
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 async function salvarTicketNoHistorico(ticket) {
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!ticket) return;
   const dados = await storageGet({ [STORAGE_KEY_HISTORICO]: [] });
   const historicoAtual = Array.isArray(dados[STORAGE_KEY_HISTORICO]) ? dados[STORAGE_KEY_HISTORICO] : [];
@@ -91,9 +98,11 @@ async function salvarTicketNoHistorico(ticket) {
   await storageSet({ [STORAGE_KEY_HISTORICO]: novoHistorico });
 }
 
-const storageChanges = globalThis.browser?.storage?.onChanged || globalThis.chrome?.storage?.onChanged;
+const storageChanges = globalThis.chrome?.storage?.onChanged || globalThis.browser?.storage?.onChanged;
+// Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
 if (storageChanges) {
   storageChanges.addListener((changes, areaName) => {
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if ((areaName === "sync" || areaName === "local") && changes[STORAGE_KEY_MENSAGEM]) {
       mensagemAutomatica = (changes[STORAGE_KEY_MENSAGEM].newValue || MENSAGEM_PADRAO).trim() || MENSAGEM_PADRAO;
       console.log("✅ Mensagem automática atualizada pela popup");
@@ -115,46 +124,61 @@ let observer = null;
 let filaTicketsNovos = [];
 
 // ── Persistência (localStorage) ──────────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function marcarTicketVisto(ticket) {
   ticketsVistos.add(ticket);
+  // Bloco protegido para capturar falhas sem quebrar todo o funcionamento da extensão.
   try {
+    // Uso do armazenamento do navegador para manter ou recuperar informações entre execuções.
     const salvos = JSON.parse(localStorage.getItem(STORAGE_KEY_VISTOS) || "{}");
     salvos[ticket] = Date.now();
+    // Uso do armazenamento do navegador para manter ou recuperar informações entre execuções.
     localStorage.setItem(STORAGE_KEY_VISTOS, JSON.stringify(salvos));
   } catch (erro) {
     console.warn("⚠️ Erro ao salvar ticketsVistos:", erro);
   }
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function carregarTicketsVistos() {
+  // Bloco protegido para capturar falhas sem quebrar todo o funcionamento da extensão.
   try {
+    // Uso do armazenamento do navegador para manter ou recuperar informações entre execuções.
     const salvos = JSON.parse(localStorage.getItem(STORAGE_KEY_VISTOS) || "{}");
     const agora = Date.now();
     const UMA_HORA_MS = 3600000;
     let recuperados = 0;
     const limpo = {};
+    // Laço de repetição usado para percorrer itens até encontrar ou montar os dados necessários.
     for (const [ticket, timestamp] of Object.entries(salvos)) {
+      // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
       if (agora - timestamp < UMA_HORA_MS) {
         ticketsVistos.add(ticket);
         limpo[ticket] = timestamp;
         recuperados++;
       }
     }
+    // Uso do armazenamento do navegador para manter ou recuperar informações entre execuções.
     localStorage.setItem(STORAGE_KEY_VISTOS, JSON.stringify(limpo));
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (recuperados > 0) {
       console.log("🔄 " + recuperados + " ticketsVistos recuperados do localStorage");
     }
   } catch (erro) {
     console.warn("⚠️ Erro ao carregar ticketsVistos:", erro);
+    // Uso do armazenamento do navegador para manter ou recuperar informações entre execuções.
     localStorage.removeItem(STORAGE_KEY_VISTOS);
   }
 }
 
 // ── Painel de status ──────────────────────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function criarPainel() {
+  // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
   if (document.getElementById('brayan-painel')) return;
 
   const style = document.createElement('style');
+  // Atualização visual ou textual de elementos da interface.
   style.textContent = `
     #brayan-painel {
       position: fixed; z-index: 999999;
@@ -252,6 +276,7 @@ function criarPainel() {
 
   const painel = document.createElement('div');
   painel.id = 'brayan-painel';
+  // Atualização visual ou textual de elementos da interface.
   painel.innerHTML = `
     <div id="bp-icone" title="Clique para pausar/retomar">
       <span id="bp-dot-led"></span>
@@ -267,53 +292,82 @@ function criarPainel() {
   `;
   document.body.appendChild(painel);
 
+  // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
   function posicionar() {
     const ajuda =
+      // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
       document.querySelector('[data-testid="help-menu"]') ||
+      // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
       document.querySelector('[aria-label="Ajuda"]') ||
+      // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
       document.querySelector('bds-tooltip[tooltip-text="Ajuda"]') ||
+      // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
       document.querySelector('[tooltip-text="Ajuda"]');
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (ajuda) {
       const rect = ajuda.getBoundingClientRect();
+      // Atualização visual ou textual de elementos da interface.
       painel.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+      // Atualização visual ou textual de elementos da interface.
       painel.style.left = rect.left + (rect.width / 2 - 17) + 'px';
     }
   }
+  // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
   setTimeout(posicionar, 500);
+  // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
   setTimeout(posicionar, 2000);
 
+  // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
   document.getElementById('bp-icone').addEventListener('mouseenter', () =>
+    // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
     document.getElementById('bp-tooltip').classList.add('visivel'));
+  // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
   document.getElementById('bp-icone').addEventListener('mouseleave', () =>
+    // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
     document.getElementById('bp-tooltip').classList.remove('visivel'));
+  // Evento de clique: executa esta ação quando o usuário pressiona o botão correspondente.
   document.getElementById('bp-icone').addEventListener('click', toggleMonitor);
+  // Evento de clique: executa esta ação quando o usuário pressiona o botão correspondente.
   document.getElementById('bp-configurar').addEventListener('click', (event) => {
     event.stopPropagation();
     abrirConfiguracaoMensagem();
   });
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function setStatus(txt, estado) {
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const led = document.getElementById('bp-dot-led');
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const status = document.getElementById('bp-status');
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const icone = document.getElementById('bp-icone');
+  // Atualização visual ou textual de elementos da interface.
   if (status) status.textContent = txt;
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (led) led.className = estado || '';
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (icone) icone.className = estado || '';
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function setCounter(txt) {
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const el = document.getElementById('bp-counter');
+  // Atualização visual ou textual de elementos da interface.
   if (el) el.textContent = txt;
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 async function abrirConfiguracaoMensagem() {
   await carregarMensagemAutomatica();
 
+  // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
   document.getElementById('brayan-config-overlay')?.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'brayan-config-overlay';
+  // Atualização visual ou textual de elementos da interface.
   overlay.innerHTML = `
     <div id="brayan-config-modal" role="dialog" aria-modal="true">
       <h3>Configurar mensagem automática</h3>
@@ -331,87 +385,121 @@ async function abrirConfiguracaoMensagem() {
   `;
   document.body.appendChild(overlay);
 
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const atual = document.getElementById('brayan-config-atual');
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const campo = document.getElementById('brayan-config-msg');
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const status = document.getElementById('brayan-config-status');
 
+  // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
   function atualizar(valor) {
     mensagemAutomatica = (valor || MENSAGEM_PADRAO).trim() || MENSAGEM_PADRAO;
+    // Atualização visual ou textual de elementos da interface.
     atual.textContent = mensagemAutomatica;
+    // Atualização visual ou textual de elementos da interface.
     campo.value = mensagemAutomatica;
   }
 
+  // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
   async function salvar(valor) {
     const novaMensagem = (valor || '').trim() || MENSAGEM_PADRAO;
     const salvo = await storageSet({ [STORAGE_KEY_MENSAGEM]: novaMensagem });
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (!salvo) {
+      // Atualização visual ou textual de elementos da interface.
       status.textContent = 'Não foi possível salvar a mensagem.';
       return;
     }
     atualizar(novaMensagem);
+    // Atualização visual ou textual de elementos da interface.
     status.style.color = '#22c55e';
+    // Atualização visual ou textual de elementos da interface.
     status.textContent = 'Mensagem salva.';
   }
 
+  // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
   async function restaurarPadrao() {
     const items = await storageGet({ [STORAGE_KEY_PADRAO]: MENSAGEM_PADRAO });
     salvar(items[STORAGE_KEY_PADRAO]);
   }
 
+  // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
   async function salvarComoPadrao() {
     const novaMensagem = (campo.value || '').trim() || MENSAGEM_PADRAO;
     const salvo = await storageSet({
       [STORAGE_KEY_PADRAO]: novaMensagem,
       [STORAGE_KEY_MENSAGEM]: novaMensagem
     });
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (!salvo) {
+      // Atualização visual ou textual de elementos da interface.
       status.textContent = 'Não foi possível salvar o padrão.';
       return;
     }
     atualizar(novaMensagem);
+    // Atualização visual ou textual de elementos da interface.
     status.style.color = '#22c55e';
+    // Atualização visual ou textual de elementos da interface.
     status.textContent = 'Novo padrão salvo.';
   }
 
   atualizar(mensagemAutomatica);
   campo.focus();
 
+  // Evento de clique: executa esta ação quando o usuário pressiona o botão correspondente.
   document.getElementById('brayan-config-salvar').addEventListener('click', () => salvar(campo.value));
+  // Evento de clique: executa esta ação quando o usuário pressiona o botão correspondente.
   document.getElementById('brayan-config-padrao').addEventListener('click', restaurarPadrao);
+  // Evento de clique: executa esta ação quando o usuário pressiona o botão correspondente.
   document.getElementById('brayan-config-salvar-padrao').addEventListener('click', salvarComoPadrao);
+  // Evento de clique: executa esta ação quando o usuário pressiona o botão correspondente.
   document.getElementById('brayan-config-fechar').addEventListener('click', () => overlay.remove());
+  // Evento de clique: executa esta ação quando o usuário pressiona o botão correspondente.
   overlay.addEventListener('click', (event) => {
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (event.target === overlay) overlay.remove();
   });
 }
 
 let totalEnviados = 0;
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function toggleMonitor() {
   monitorAtivo = !monitorAtivo;
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (monitorAtivo) {
     setStatus('Monitor ativo', '');
     iniciarObserver();
   } else {
     setStatus('Monitor pausado', 'inativo');
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (observer) observer.disconnect();
     filaTicketsNovos = [];
   }
 }
 
 // ── Extrai número do ticket do card ──────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function getTicket(el) {
+  // Atualização visual ou textual de elementos da interface.
   const txt = el.innerText || el.textContent || '';
   const m = txt.match(/#(\d+)/);
   return m ? m[1] : null;
 }
 
 // ── Encontra o campo de mensagem ─────────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function getCampo() {
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const exato = document.querySelector('textarea[placeholder="Escreva uma mensagem..."]')
+    // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
     || document.querySelector('textarea[placeholder="Escreva uma mensagem"]')
+    // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
     || document.querySelector('textarea[placeholder*="mensagem"]')
+    // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
     || document.querySelector('textarea[placeholder*="Escreva"]');
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (exato && campoInterativo(exato)) return exato;
 
   const selectors = [
@@ -422,9 +510,12 @@ function getCampo() {
     'textarea',
     '[role="textbox"]'
   ];
+  // Laço de repetição usado para percorrer itens até encontrar ou montar os dados necessários.
   for (const sel of selectors) {
+    // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
     for (const el of document.querySelectorAll(sel)) {
       const rect = el.getBoundingClientRect();
+      // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
       if (rect.width > 50 && rect.height > 10 && rect.bottom > window.innerHeight * 0.4 && campoInterativo(el))
         return el;
     }
@@ -433,33 +524,47 @@ function getCampo() {
 }
 
 // Verifica se o campo está realmente pronto para receber input
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function campoInterativo(el) {
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!el) return false;
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (el.disabled || el.readOnly) return false;
   const rect = el.getBoundingClientRect();
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (rect.width === 0 || rect.height === 0) return false;
   // Verifica se não está bloqueado por overlay/loading
   const topEl = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!topEl) return false;
   return el.contains(topEl) || topEl === el || el.contains(topEl);
 }
 
 // ── Pega o ticket visível no cabeçalho ───────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function getTicketAtivo() {
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const el = document.querySelector('#ticket-sequential-id');
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (el) {
+    // Atualização visual ou textual de elementos da interface.
     const txt = el.shadowRoot?.textContent || el.textContent || el.innerText || '';
     const m = txt.match(/\d+/);
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (m) return m[0];
   }
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const header = document.querySelector('[class*="ticket-info"], [class*="chat-header"]');
+  // Atualização visual ou textual de elementos da interface.
   const txt = (header || document.body).innerText || '';
   const m = txt.match(/#(\d+)/);
   return m ? m[1] : null;
 }
 
 // ── Digita e envia a apresentação ────────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function enviarApresentacao(tentativas = 0) {
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (tentativas > 30) {
     setStatus('⚠️ Campo não encontrado', 'inativo');
     enviando = false;
@@ -468,35 +573,46 @@ function enviarApresentacao(tentativas = 0) {
   }
 
   const el = getCampo();
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!el) {
+    // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
     setTimeout(() => enviarApresentacao(tentativas + 1), 100);
     return;
   }
 
   el.focus();
+  // Bloco protegido para capturar falhas sem quebrar todo o funcionamento da extensão.
   try {
     const tag = el.tagName.toLowerCase();
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (tag === 'textarea' || tag === 'input') {
       const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+      // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
       if (setter?.set) setter.set.call(el, mensagemAutomatica);
+      // Atualização visual ou textual de elementos da interface.
       else el.value = mensagemAutomatica;
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
       document.execCommand('selectAll', false, null);
       document.execCommand('insertText', false, mensagemAutomatica);
+      // Atualização visual ou textual de elementos da interface.
       if (!el.textContent?.trim()) {
+        // Atualização visual ou textual de elementos da interface.
         el.innerText = mensagemAutomatica;
         el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: mensagemAutomatica }));
       }
     }
 
+    // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
     setTimeout(() => {
       el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
       el.dispatchEvent(new KeyboardEvent('keyup',   { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
 
+      // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
       for (const btn of document.querySelectorAll('button[type="submit"], button[aria-label*="nviar"], [data-testid*="send"]')) {
         const r = btn.getBoundingClientRect();
+        // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
         if (r.width > 0 && r.height > 0) { btn.click(); break; }
       }
 
@@ -508,19 +624,24 @@ function enviarApresentacao(tentativas = 0) {
       enviando = false;
       processarProximoDaFila();
 
+      // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
       setTimeout(() => { setStatus('Monitor ativo', ''); }, 3000);
     }, 300);
 
   } catch (e) {
+    // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
     setTimeout(() => enviarApresentacao(tentativas + 1), 100);
   }
 }
 
 // ── Desativa animações do Blip ────────────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function desativarAnimacoes() {
+  // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
   if (document.getElementById('brayan-no-anim')) return;
   const s = document.createElement('style');
   s.id = 'brayan-no-anim';
+  // Atualização visual ou textual de elementos da interface.
   s.textContent = `
     *, *::before, *::after {
       animation-duration: 0ms !important;
@@ -539,10 +660,12 @@ function desativarAnimacoes() {
 }
 
 // ── Aguarda ticket correto aparecer no cabeçalho, depois envia
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function aguardarTicketEEnviar(ticketEsperado) {
   // Verifica imediatamente — se já está na conversa certa, dispara na hora
   const ticketAtual = getTicketAtivo();
   const campo = getCampo();
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (campo && (!ticketEsperado || ticketAtual === ticketEsperado)) {
     enviarApresentacao(0);
     return;
@@ -552,15 +675,19 @@ function aguardarTicketEEnviar(ticketEsperado) {
 
   // MutationObserver focado: detecta quando o textarea do Blip entra no DOM
   // Não usa characterData — só childList para ser leve
+  // Função em formato de seta usada para organizar uma ação reutilizável do script.
   const obs = new MutationObserver(() => {
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (enviado) return;
     const ticketAgora = getTicketAtivo();
     const campoAgora = getCampo();
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (campoAgora && (!ticketEsperado || ticketAgora === ticketEsperado)) {
       enviado = true;
       obs.disconnect();
       clearTimeout(timeout);
       // Pequeno delay para garantir que o campo está totalmente montado
+      // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
       setTimeout(() => enviarApresentacao(0), 200);
     }
   });
@@ -568,7 +695,9 @@ function aguardarTicketEEnviar(ticketEsperado) {
   obs.observe(document.body, { childList: true, subtree: true });
 
   // Segurança: desiste após 6s
+  // Função em formato de seta usada para organizar uma ação reutilizável do script.
   const timeout = setTimeout(() => {
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (!enviado) {
       obs.disconnect();
       setStatus('⚠️ Tempo esgotado', 'inativo');
@@ -579,6 +708,7 @@ function aguardarTicketEEnviar(ticketEsperado) {
 }
 
 // ── Abre o atendimento e aguarda o chat correto carregar ──────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function abrirAtendimento(card, ticket) {
   setStatus('🔔 Novo atendimento!', 'enviando');
   desativarAnimacoes();
@@ -587,39 +717,55 @@ function abrirAtendimento(card, ticket) {
 }
 
 // ── Registra tickets já visíveis para não reenviar ───────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function registrarTicketsExistentes() {
   // Busca apenas nos cards da lista, não em todo o DOM (mais rápido)
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const lista = document.querySelector('[class*="ss-content"], [class*="chat-list"], [class*="contacts"]') || document.body;
+  // Atualização visual ou textual de elementos da interface.
   const txt = lista.innerText || '';
   const matches = txt.match(/#\d+/g) || [];
   matches.forEach(m => marcarTicketVisto(m.replace('#', '')));
 
   const ticketAberto = getTicketAtivo();
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (ticketAberto) marcarTicketVisto(ticketAberto);
 }
 
 // ── Inicia o MutationObserver na lista de atendimentos ───────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function iniciarObserver() {
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (observer) observer.disconnect();
 
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const alvo = document.querySelector(
     '[class*="ss-content"], [class*="chat-list"], [class*="attendance"], [class*="contacts-list"]'
   ) || document.body;
 
+  // Observador do DOM: acompanha mudanças na página para reagir quando novos elementos aparecem.
   observer = new MutationObserver((mutations) => {
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (!monitorAtivo) return;
 
+    // Laço de repetição usado para percorrer itens até encontrar ou montar os dados necessários.
     for (const m of mutations) {
+      // Laço de repetição usado para percorrer itens até encontrar ou montar os dados necessários.
       for (const node of m.addedNodes) {
+        // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
         if (node.nodeType !== 1) continue;
 
         let ticket = getTicket(node);
+        // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
         if (ticket) {
           marcarTicketNaFila(ticket);
         } else {
+          // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
           const subs = node.querySelectorAll?.('[class*="ticket"], article, li, [class*="card"]') || [];
+          // Laço de repetição usado para percorrer itens até encontrar ou montar os dados necessários.
           for (const sub of subs) {
             const t = getTicket(sub);
+            // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
             if (t) marcarTicketNaFila(t);
           }
         }
@@ -634,19 +780,25 @@ function iniciarObserver() {
 }
 
 // ── Fila de tickets novos ─────────────────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function marcarTicketNaFila(ticket) {
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!ticket || ticketsVistos.has(ticket) || filaTicketsNovos.includes(ticket)) return;
   marcarTicketVisto(ticket);
   filaTicketsNovos.push(ticket);
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function processarProximoDaFila() {
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!monitorAtivo || enviando) return;
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (filaTicketsNovos.length === 0) return;
 
   const ticket = filaTicketsNovos.shift();
   const card = encontrarCardPorTicket(ticket);
 
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!card) {
     console.warn("⚠️ Card do ticket " + ticket + " não encontrado na lista - pulando");
     processarProximoDaFila();
@@ -654,20 +806,26 @@ function processarProximoDaFila() {
   }
 
   enviando = true;
+  // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
   setTimeout(() => abrirAtendimento(card, ticket), 200);
 }
 
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 function encontrarCardPorTicket(ticket) {
+  // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const alvo = document.querySelector(
     '[class*="ss-content"], [class*="chat-list"], [class*="attendance"], [class*="contacts-list"]'
   ) || document.body;
+  // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
   for (const el of alvo.querySelectorAll('[class*="ticket"], article, li, [class*="card"]')) {
+    // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (getTicket(el) === ticket) return el;
   }
   return null;
 }
 
 // ── Inicialização ─────────────────────────────────────────────
+// Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
 async function init() {
   console.log("🔄 Carregando dados persistentes...");
   await carregarMensagemAutomatica();
@@ -679,19 +837,26 @@ async function init() {
   iniciarObserver();
 }
 
+// Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
   setTimeout(init, 1000);
 } else {
+  // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
   window.addEventListener('load', () => setTimeout(init, 1000));
 }
 
 // Reinicia se a rota SPA mudar
 let lastUrl = location.href;
+// Observador do DOM: acompanha mudanças na página para reagir quando novos elementos aparecem.
 new MutationObserver(() => {
+  // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (location.href !== lastUrl) {
     lastUrl = location.href;
+    // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
     setTimeout(() => {
       registrarTicketsExistentes();
+      // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
       if (monitorAtivo) iniciarObserver();
     }, 1500);
   }

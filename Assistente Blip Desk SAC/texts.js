@@ -1,5 +1,17 @@
+/*
+  Objeto principal que agrupa todos os modelos de texto usados no protocolo.
+  Ele funciona como uma biblioteca: guarda os textos de abertura e fechamento
+  e também oferece funções para montar esses textos quando o atendente escolhe um motivo.
+*/
 const ModelosProtocolo = {
 
+  /*
+    Mapa de descrições por motivo de atendimento.
+    Cada chave representa um modelo diferente de atendimento disponível para seleção.
+    Dentro de cada motivo existem dois papéis:
+    - abertura: texto inicial usado para registrar como o cliente entrou em contato.
+    - fechamento: texto final, checklist ou resumo usado ao concluir o atendimento.
+  */
   descricoesPorMotivo: {
     "PRESTAR INFORMAÇÕES / SAC": {
       abertura: "Cliente entrou em contato",
@@ -107,6 +119,14 @@ Informado ao cliente sobre o prazo de 48h para o setor responsável estar dando 
     }
   },
 
+  /*
+    Gera o texto de abertura do protocolo.
+    Parâmetros recebidos:
+    - nome: nome do cliente ou solicitante.
+    - telefone: telefone relacionado ao atendimento.
+    - ticket: número ou identificação do chamado/protocolo.
+    - motivo: motivo escolhido pelo atendente para selecionar o modelo correto.
+  */
   gerarAbertura: function(nome, telefone, ticket, motivo) {
     const m = this.descricoesPorMotivo[motivo];
     const texto = m ? m.abertura : "Atendimento registrado.";
@@ -117,6 +137,11 @@ ${ticket}
 ${texto}`;
   },
 
+  /*
+    Gera o texto de fechamento do protocolo a partir do motivo selecionado.
+    Quando não encontra um modelo para o motivo informado, retorna uma string vazia
+    como fallback para não inserir nenhum fechamento indevido.
+  */
   gerarFechamento: function(motivo) {
     const m = this.descricoesPorMotivo[motivo];
     return m ? m.fechamento : "";
