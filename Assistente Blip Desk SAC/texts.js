@@ -1,7 +1,7 @@
 const ModelosProtocolo = {
 
   descricoesPorMotivo: {
-    "CLIENTE": {
+    "PRESTAR INFORMAÇÕES / SAC": {
       abertura: "Cliente entrou em contato",
       fechamento: ``
     },
@@ -71,8 +71,7 @@ Encaminhado ao setor responsável para dar continuidade ao seu atendimento.`,
       abertura: `Cliente entrou em contato solicitando renegociação dos seus débitos.
 Disponibilidade de receber contato:
 Contatos atuais:`,
-      fechamento: `STATUS DO CONTRATO:
-Encaminhado ao setor responsável para dar continuidade ao atendimento.`
+      fechamento: ``
     },
     "MUDANÇA DE TITULARIDADE": {
       abertura: `Cliente solicita Alteração de Titularidade.`,
