@@ -490,6 +490,19 @@ function getTicket(el) {
 
 // ── Encontra o campo de mensagem ─────────────────────────────
 // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
+const SELETOR_RAIZES_EXTENSAO = [
+  '#painel-protocolo-ext',
+  '#painel-fechamento-ext',
+  '#lista-motivos',
+  '#brayan-painel',
+  '#brayan-config-overlay',
+  '#brayan-config-modal'
+].join(',');
+
+function pertenceAExtensao(el) {
+  return !!el?.closest?.(SELETOR_RAIZES_EXTENSAO);
+}
+
 function getCampo() {
   // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
   const exato = document.querySelector('textarea[placeholder="Escreva uma mensagem..."]')
@@ -528,6 +541,7 @@ function getCampo() {
 function campoInterativo(el) {
   // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!el) return false;
+  if (pertenceAExtensao(el)) return false;
   // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (el.disabled || el.readOnly) return false;
   const rect = el.getBoundingClientRect();
@@ -537,7 +551,8 @@ function campoInterativo(el) {
   const topEl = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
   // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
   if (!topEl) return false;
-  return el.contains(topEl) || topEl === el || el.contains(topEl);
+  if (pertenceAExtensao(topEl)) return true;
+  return el.contains(topEl) || topEl === el;
 }
 
 // ── Pega o ticket visível no cabeçalho ───────────────────────
@@ -611,6 +626,7 @@ function enviarApresentacao(tentativas = 0) {
 
       // Busca no DOM para encontrar o elemento exato que será lido ou alterado.
       for (const btn of document.querySelectorAll('button[type="submit"], button[aria-label*="nviar"], [data-testid*="send"]')) {
+        if (pertenceAExtensao(btn)) continue;
         const r = btn.getBoundingClientRect();
         // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
         if (r.width > 0 && r.height > 0) { btn.click(); break; }

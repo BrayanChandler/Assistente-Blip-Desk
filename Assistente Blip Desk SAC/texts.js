@@ -48,6 +48,12 @@ Realizado confirmação de titularidade via dados: Data de Nascimento.
 Cliente ciente das informações, também confirma acesso à rede com a nova senha.
 Protocolo de atendimento finalizado.`
     },
+    "ALTERAÇÃO PPPoE": {
+      abertura: `Cliente entrou em contato solicitando alteração PPPoE.`,
+      fechamento: `Realizado as alterações de autenticação. 
+Atendimento realizado com sucesso. 
+Protocolo finalizado.`
+    },
     "MANUTENÇÃO EMERGENCIAL": {
       abertura: "Cliente entrou em contato informando dificuldade de acesso em sua conexão.",
       fechamento: `Verificado que na localidade do cliente ocorria manutenção corretiva.
@@ -73,6 +79,10 @@ Atendimento Concluído.`
 Ciente de que poderá realizar o desbloqueio por confiança pelo Aplicativo da empresa, site da empresa ou Whatsapp no menu principal.
 Atendimento Concluído.`
     },
+    "UPGRADE": {
+      abertura: `Cliente entrou em contato solicitando upgrade de seu plano`,
+      fechamento: ``
+    },
     "ALTERAÇÃO DE VENCIMENTO": {
       abertura: `Cliente solicita alterar a data de vencimento. Ciente de que não poderá realizar a troca com boleto vencido. Ciente de que a troca poderá ser gerado valor proporcional.
 Cliente escolheu a data:
@@ -90,7 +100,10 @@ Contatos atuais:`,
       fechamento: ``
     },
     "REINSTALAÇÃO": {
-      abertura: `Cliente entrou em contato solicitando mudança de `,
+      abertura: `Cliente entrou em contato solicitando troca de endereço/cômodo 
+Novo endereço/cômodo:  
+Disponibilidade de receber contato:
+Contatos atuais: `,
       fechamento: ``
     },
     "APLICATIVO DA CENTRAL": {
@@ -130,9 +143,9 @@ Informado ao cliente sobre o prazo de 48h para o setor responsável estar dando 
   gerarAbertura: function(nome, telefone, ticket, motivo) {
     const m = this.descricoesPorMotivo[motivo];
     const texto = m ? m.abertura : "Atendimento registrado.";
-    return `${nome}
-${telefone}
-${ticket}
+    return `Cliente: ${nome}
+Telefone: ${telefone}
+Ticket: ${ticket}
 
 ${texto}`;
   },
