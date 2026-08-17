@@ -186,9 +186,8 @@ function criarPainel() {
       display: flex; align-items: center;
       font-family: 'Segoe UI', sans-serif;
       font-size: 14px;
-      opacity: 0.45; transition: opacity 0.2s;
+      opacity: 1;
     }
-    #brayan-painel:hover { opacity: 1; }
     #bp-tooltip {
       background: #1e293b; border: 1px solid #334155;
       border-radius: 10px; padding: 10px 14px;
@@ -251,14 +250,50 @@ function criarPainel() {
     }
     #brayan-config-actions button:hover { opacity: 0.9; }
     #brayan-config-status { min-height: 18px; margin-top: 9px; font-size: 13px; color: #94a3b8; }
+    #brayan-protocolo-overlay {
+      position: fixed; inset: 0; z-index: 1000001; display: flex;
+      align-items: center; justify-content: center; background: rgba(2,6,23,0.58);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    #brayan-protocolo-modal {
+      width: min(470px, calc(100vw - 28px)); padding: 20px; border-radius: 10px;
+      background: #0f172a; color: #e2e8f0; border: 1px solid #334155;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    }
+    #brayan-protocolo-modal h3 { margin: 0 0 6px; color: #f8fafc; }
+    #brayan-protocolo-modal p { margin: 0 0 14px; color: #94a3b8; font-size: 13px; }
+    #brayan-protocolo-modal label { display: block; margin: 10px 0 5px; color: #a7f3d0; font-size: 13px; font-weight: 700; }
+    #brayan-protocolo-modal input, #brayan-protocolo-modal textarea, #brayan-protocolo-modal select {
+      width: 100%; padding: 10px; border: 1px solid #334155; border-radius: 7px;
+      background: #020617; color: #e2e8f0; font: 14px 'Segoe UI', sans-serif;
+    }
+    #brayan-protocolo-modal textarea { min-height: 78px; resize: vertical; }
+    #brayan-protocolo-actions { display: flex; gap: 8px; margin-top: 14px; }
+    #brayan-protocolo-actions button { flex: 1; padding: 10px; border: 0; border-radius: 7px; color: #fff; background: #334155; font-weight: 700; cursor: pointer; }
+    #brayan-protocolo-salvar { background: linear-gradient(135deg, #22c55e, #0ea5e9) !important; }
+    #brayan-protocolo-status { min-height: 18px; margin-top: 8px; color: #fca5a5; font-size: 13px; }
+    #brayan-protocolo-lista { max-height: 150px; overflow: auto; margin-bottom: 8px; }
+    .brayan-protocolo-item { display: flex; align-items: center; gap: 5px; padding: 6px 0; border-bottom: 1px solid #334155; font-size: 12px; }
+    .brayan-protocolo-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .brayan-protocolo-item button, #brayan-protocolo-restaurar { border: 1px solid #475569; border-radius: 5px; padding: 4px 7px; background: #1e293b; color: #cbd5e1; cursor: pointer; font-size: 11px; }
+    #brayan-protocolo-restaurar { width: 100%; margin-bottom: 10px; }
     #bp-icone {
       width: 34px; height: 34px; border-radius: 50%;
       background: rgba(30,41,59,0.7); border: 2px solid #22c55e;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; position: relative;
-      transition: border-color 0.3s, transform 0.2s;
+      cursor: pointer; position: relative; opacity: 0.45;
+      transition: border-color 0.3s, transform 0.2s, opacity 0.2s;
     }
-    #bp-icone:hover { transform: scale(1.1); }
+    #bp-icone:hover { transform: scale(1.1); opacity: 1; }
+    #bp-protocolos-configurar {
+      position: absolute; left: 2px; bottom: 549px;
+      width: 40px; height: 40px; padding: 0;
+      border: 1px solid rgba(255,255,255,0.16); border-radius: 50%;
+      background: rgba(255,255,255,0.07); color: #d7dee8; cursor: pointer;
+      font-size: 23px; line-height: 38px; opacity: 1;
+      transition: opacity 0.2s, color 0.2s, border-color 0.2s;
+    }
+    #bp-protocolos-configurar:hover { color: #ffffff; border-color: rgba(255,255,255,0.32); background: rgba(255,255,255,0.12); }
     #bp-icone.inativo { border-color: #ef4444; }
     #bp-icone.enviando { border-color: #f59e0b; }
     #bp-icone svg { width: 15px; height: 15px; }
@@ -278,6 +313,7 @@ function criarPainel() {
   painel.id = 'brayan-painel';
   // Atualização visual ou textual de elementos da interface.
   painel.innerHTML = `
+    <button id="bp-protocolos-configurar" type="button" title="Adicionar protocolo" aria-label="Adicionar protocolo">⚙</button>
     <div id="bp-icone" title="Clique para pausar/retomar">
       <span id="bp-dot-led"></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -331,6 +367,10 @@ function criarPainel() {
   document.getElementById('bp-configurar').addEventListener('click', (event) => {
     event.stopPropagation();
     abrirConfiguracaoMensagem();
+  });
+  document.getElementById('bp-protocolos-configurar').addEventListener('click', (event) => {
+    event.stopPropagation();
+    abrirConfiguracaoProtocolo();
   });
 }
 
@@ -460,6 +500,112 @@ async function abrirConfiguracaoMensagem() {
     // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
     if (event.target === overlay) overlay.remove();
   });
+}
+
+async function abrirConfiguracaoProtocolo() {
+  document.getElementById('brayan-protocolo-overlay')?.remove();
+  const dados = await storageGet({
+    [STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]: [],
+    [STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]: [],
+    [STORAGE_KEY_PROTOCOLOS_OCULTOS]: []
+  });
+  const protocolos = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]) ? dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS] : [];
+  const substituicoes = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]) ? dados[STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES] : [];
+  const ocultos = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_OCULTOS]) ? dados[STORAGE_KEY_PROTOCOLOS_OCULTOS] : [];
+  const oficiais = Object.entries(ModelosProtocolo.descricoesPorMotivo).map(([titulo, modelo]) => {
+    const alteracao = substituicoes.find((item) => item.original === titulo);
+    return { titulo: alteracao?.titulo || titulo, abertura: alteracao?.abertura || modelo.abertura, fechamento: alteracao?.fechamento ?? modelo.fechamento, oficial: true, original: titulo, oculto: ocultos.includes(titulo) };
+  });
+  const modelos = [...oficiais.filter((modelo) => !modelo.oculto), ...protocolos.map((modelo) => ({ ...modelo, oficial: false }))];
+  const overlay = document.createElement('div');
+  overlay.id = 'brayan-protocolo-overlay';
+  overlay.innerHTML = `
+    <div id="brayan-protocolo-modal" role="dialog" aria-modal="true">
+      <h3>Adicionar protocolo</h3>
+      <p>Cliente, Telefone e Ticket serão preenchidos automaticamente.</p>
+      <div id="brayan-protocolo-lista"></div>
+      <button id="brayan-protocolo-restaurar" type="button">Restaurar modelos oficiais</button>
+      <label for="brayan-protocolo-titulo">Título</label>
+      <input id="brayan-protocolo-titulo" type="text" placeholder="Ex.: DÚVIDA SOBRE PLANO">
+      <label for="brayan-protocolo-abertura">Texto da abertura</label>
+      <textarea id="brayan-protocolo-abertura" placeholder="Cliente entrou em contato..."></textarea>
+      <label for="brayan-protocolo-tem-fechamento">Possui fechamento?</label>
+      <select id="brayan-protocolo-tem-fechamento"><option value="nao">Não</option><option value="sim">Sim</option></select>
+      <div id="brayan-protocolo-fechamento-wrap" hidden>
+        <label for="brayan-protocolo-fechamento">Texto do fechamento</label>
+        <textarea id="brayan-protocolo-fechamento" placeholder="Digite o fechamento"></textarea>
+      </div>
+      <div id="brayan-protocolo-actions">
+        <button id="brayan-protocolo-salvar" type="button">Salvar</button>
+        <button id="brayan-protocolo-cancelar" type="button">Cancelar</button>
+      </div>
+      <div id="brayan-protocolo-status" role="status"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const titulo = document.getElementById('brayan-protocolo-titulo');
+  const abertura = document.getElementById('brayan-protocolo-abertura');
+  const escolhaFechamento = document.getElementById('brayan-protocolo-tem-fechamento');
+  const fechamentoWrap = document.getElementById('brayan-protocolo-fechamento-wrap');
+  const fechamento = document.getElementById('brayan-protocolo-fechamento');
+  const status = document.getElementById('brayan-protocolo-status');
+
+  escolhaFechamento.addEventListener('change', () => {
+    fechamentoWrap.hidden = escolhaFechamento.value !== 'sim';
+  });
+  document.getElementById('brayan-protocolo-cancelar').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (event) => { if (event.target === overlay) overlay.remove(); });
+  document.getElementById('brayan-protocolo-salvar').addEventListener('click', async () => {
+    const novoTitulo = titulo.value.trim();
+    const novoTexto = abertura.value.trim();
+    const novoFechamento = fechamento.value.trim();
+    if (!novoTitulo || !novoTexto || (escolhaFechamento.value === 'sim' && !novoFechamento)) {
+      status.textContent = 'Preencha título, abertura e, se escolhido, o fechamento.';
+      return;
+    }
+    if (!modeloEditando && (Object.prototype.hasOwnProperty.call(ModelosProtocolo.descricoesPorMotivo, novoTitulo) ||
+        protocolos.some((modelo) => modelo.titulo === novoTitulo))) {
+      status.textContent = 'Já existe um protocolo com esse título.';
+      return;
+    }
+    const registro = { id: `personalizado-${Date.now()}`, titulo: novoTitulo, abertura: novoTexto, fechamento: escolhaFechamento.value === 'sim' ? novoFechamento : '' };
+    let valores;
+    if (modeloEditando?.oficial) {
+      valores = { [STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]: [...substituicoes.filter((item) => item.original !== modeloEditando.original), { original: modeloEditando.original, titulo: novoTitulo, abertura: novoTexto, fechamento: registro.fechamento }] };
+    } else if (modeloEditando) {
+      valores = { [STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]: protocolos.map((item) => item.id === modeloEditando.id ? { ...registro, id: item.id } : item) };
+    } else {
+      valores = { [STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]: [...protocolos, registro] };
+    }
+    const salvo = await storageSet(valores);
+    if (!salvo) { status.textContent = 'Não foi possível salvar o protocolo.'; return; }
+    window.dispatchEvent(new CustomEvent('brayan-protocolos-atualizados'));
+    overlay.remove();
+  });
+  let modeloEditando = null;
+  const lista = document.getElementById('brayan-protocolo-lista');
+  lista.innerHTML = modelos.map((modelo) => `<div class="brayan-protocolo-item"><span>${modelo.titulo}</span><button type="button" data-editar="${modelo.original || modelo.id}">Editar</button><button type="button" data-excluir="${modelo.original || modelo.id}">Excluir</button></div>`).join('');
+  lista.querySelectorAll('[data-editar]').forEach((botao) => botao.addEventListener('click', () => {
+    const modelo = modelos.find((item) => (item.original || item.id) === botao.dataset.editar);
+    if (!modelo) return;
+    modeloEditando = modelo;
+    titulo.value = modelo.titulo; abertura.value = modelo.abertura; fechamento.value = modelo.fechamento || '';
+    escolhaFechamento.value = modelo.fechamento ? 'sim' : 'nao';
+    escolhaFechamento.dispatchEvent(new Event('change'));
+  }));
+  lista.querySelectorAll('[data-excluir]').forEach((botao) => botao.addEventListener('click', async () => {
+    const modelo = modelos.find((item) => (item.original || item.id) === botao.dataset.excluir);
+    if (!modelo || !confirm(`Excluir o modelo “${modelo.titulo}”?`)) return;
+    const novoOcultos = modelo.oficial ? [...new Set([...ocultos, modelo.original])] : ocultos;
+    const novosProtocolos = modelo.oficial ? protocolos : protocolos.filter((item) => item.id !== modelo.id);
+    await storageSet({ [STORAGE_KEY_PROTOCOLOS_OCULTOS]: novoOcultos, [STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]: novosProtocolos });
+    window.dispatchEvent(new CustomEvent('brayan-protocolos-atualizados')); overlay.remove();
+  }));
+  document.getElementById('brayan-protocolo-restaurar').addEventListener('click', async () => {
+    await storageSet({ [STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]: [], [STORAGE_KEY_PROTOCOLOS_OCULTOS]: [] });
+    window.dispatchEvent(new CustomEvent('brayan-protocolos-atualizados')); overlay.remove();
+  });
+  titulo.focus();
 }
 
 let totalEnviados = 0;

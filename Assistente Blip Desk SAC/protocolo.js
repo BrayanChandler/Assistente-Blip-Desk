@@ -6,6 +6,56 @@
 // Assistente Blip Desk - Protocolo
 // Criado por Brayan · BRYAN-ORIG-12de19360097a0ce
 
+const STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS = 'brayan_protocolos_personalizados';
+const STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES = 'brayan_protocolos_substituicoes';
+const STORAGE_KEY_PROTOCOLOS_OCULTOS = 'brayan_protocolos_ocultos';
+
+function obterStorageExtensao() {
+  return globalThis.chrome?.storage?.sync || globalThis.browser?.storage?.sync || null;
+}
+
+function lerStorageExtensao(defaults) {
+  const storage = obterStorageExtensao();
+  if (!storage) return Promise.resolve(defaults);
+  return new Promise((resolve) => {
+    try {
+      const retorno = storage.get(defaults, (items) => {
+        const erro = globalThis.chrome?.runtime?.lastError;
+        resolve(erro ? defaults : (items || defaults));
+      });
+      if (retorno && typeof retorno.then === 'function') {
+        retorno.then((items) => resolve(items || defaults)).catch(() => resolve(defaults));
+      }
+    } catch { resolve(defaults); }
+  });
+}
+
+async function carregarProtocolosPersonalizados() {
+  const dados = await lerStorageExtensao({ [STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]: [] });
+  return Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS])
+    ? dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS].filter((modelo) => modelo?.titulo && modelo?.abertura)
+    : [];
+}
+
+let protocolosPersonalizados = [];
+let substituicoesProtocolos = [];
+let protocolosOcultos = [];
+let modelosEfetivos = [];
+
+function obterModeloProtocolo(titulo) {
+  return modelosEfetivos.find((modelo) => modelo.titulo === titulo) || null;
+}
+
+function gerarAberturaComModelo(cliente, telefone, ticket, titulo) {
+  const modelo = obterModeloProtocolo(titulo);
+  const texto = modelo?.abertura || 'Atendimento registrado.';
+  return `Cliente: ${cliente}\nTelefone: ${telefone}\nTicket: ${ticket}\n\n${texto}`;
+}
+
+function gerarFechamentoComModelo(titulo) {
+  return obterModeloProtocolo(titulo)?.fechamento || '';
+}
+
 /* ── EXTRAÇÃO ROBUSTA DE DADOS DO ATENDIMENTO ─────────────────────────── */
 
 // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
@@ -764,7 +814,7 @@ function iniciarPainel() {
   }
 
   /* ── SELECT CUSTOMIZADO (lista abre pra cima) ─────────────── */
-  const opcoes = Object.keys(ModelosProtocolo.descricoesPorMotivo).sort();
+  let opcoes = Object.keys(ModelosProtocolo.descricoesPorMotivo).sort();
   let motivoSelecionado = "";
 
   // Captura elementos da tela para poder ler valores, alterar conteúdo ou ligar eventos.
@@ -785,6 +835,10 @@ function iniciarPainel() {
   const textoFechamento   = document.getElementById('texto-fechamento');
   let fechamentoOriginal = "";
   let fechamentoEditado = false;
+
+  function atualizarOpcoesProtocolos() {
+    opcoes = modelosEfetivos.map((modelo) => modelo.titulo).sort();
+  }
 
   // Função responsável por uma etapa específica do fluxo; os comentários internos detalham as decisões principais.
   function aplicarTema(tema) {
@@ -1016,13 +1070,13 @@ function iniciarPainel() {
       return;
     }
     const { cliente, telefone, ticket } = capturarDados();
-    const abertura = ModelosProtocolo.gerarAbertura(cliente, telefone, ticket, motivoSelecionado);
+    const abertura = gerarAberturaComModelo(cliente, telefone, ticket, motivoSelecionado);
     navigator.clipboard.writeText(abertura).then(() => {
       // Atualização visual ou textual de elementos da interface.
       btnCopiar.textContent = "✓ Copiado!";
       // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
       setTimeout(() => { btnCopiar.textContent = "Copiar Protocolo"; }, 2000);
-      const fechamento = ModelosProtocolo.gerarFechamento(motivoSelecionado);
+      const fechamento = gerarFechamentoComModelo(motivoSelecionado);
       // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
       if (fechamento?.trim()) {
         fechamentoOriginal = fechamento;
@@ -1038,14 +1092,44 @@ function iniciarPainel() {
     });
   });
 
+  atualizarOpcoesProtocolos();
   renderizarItens('');
 }
 
+window.addEventListener('brayan-protocolos-atualizados', async () => {
+  const dados = await lerStorageExtensao({
+    [STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]: [],
+    [STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]: [],
+    [STORAGE_KEY_PROTOCOLOS_OCULTOS]: []
+  });
+  protocolosPersonalizados = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]) ? dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS] : [];
+  substituicoesProtocolos = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]) ? dados[STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES] : [];
+  protocolosOcultos = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_OCULTOS]) ? dados[STORAGE_KEY_PROTOCOLOS_OCULTOS] : [];
+  modelosEfetivos = ModelosProtocolo.comporModelos(protocolosPersonalizados, substituicoesProtocolos, protocolosOcultos);
+  document.getElementById('painel-protocolo-ext')?.remove();
+  document.getElementById('painel-fechamento-ext')?.remove();
+  document.getElementById('lista-motivos')?.remove();
+  iniciarPainel();
+});
+
 // Validação/decisão do fluxo para tratar cenários diferentes sem interromper a extensão.
+async function iniciarPainelComProtocolos() {
+  const dados = await lerStorageExtensao({
+    [STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]: [],
+    [STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]: [],
+    [STORAGE_KEY_PROTOCOLOS_OCULTOS]: []
+  });
+  protocolosPersonalizados = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS]) ? dados[STORAGE_KEY_PROTOCOLOS_PERSONALIZADOS] : [];
+  substituicoesProtocolos = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES]) ? dados[STORAGE_KEY_PROTOCOLOS_SUBSTITUICOES] : [];
+  protocolosOcultos = Array.isArray(dados[STORAGE_KEY_PROTOCOLOS_OCULTOS]) ? dados[STORAGE_KEY_PROTOCOLOS_OCULTOS] : [];
+  modelosEfetivos = ModelosProtocolo.comporModelos(protocolosPersonalizados, substituicoesProtocolos, protocolosOcultos);
+  iniciarPainel();
+}
+
 if (document.readyState === 'loading') {
   // Aguarda o HTML do popup carregar antes de acessar elementos da página.
-  document.addEventListener('DOMContentLoaded', () => setTimeout(iniciarPainel, 1500));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(iniciarPainelComProtocolos, 1500));
 } else {
   // Controle de tempo usado para aguardar a página responder ou repetir uma verificação.
-  setTimeout(iniciarPainel, 1500);
+  setTimeout(iniciarPainelComProtocolos, 1500);
 }

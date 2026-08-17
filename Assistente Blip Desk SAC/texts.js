@@ -141,7 +141,7 @@ Informado ao cliente sobre o prazo de 48h para o setor responsável estar dando 
     - motivo: motivo escolhido pelo atendente para selecionar o modelo correto.
   */
   gerarAbertura: function(nome, telefone, ticket, motivo) {
-    const m = this.descricoesPorMotivo[motivo];
+    const m = this.obterModelo(motivo, arguments[4]);
     const texto = m ? m.abertura : "Atendimento registrado.";
     return `Cliente: ${nome}
 Telefone: ${telefone}
@@ -156,7 +156,32 @@ ${texto}`;
     como fallback para não inserir nenhum fechamento indevido.
   */
   gerarFechamento: function(motivo) {
-    const m = this.descricoesPorMotivo[motivo];
+    const m = this.obterModelo(motivo, arguments[1]);
     return m ? m.fechamento : "";
+  },
+
+  obterModelo: function(motivo, personalizados = []) {
+    const oficial = this.descricoesPorMotivo[motivo];
+    if (oficial) return oficial;
+    if (!Array.isArray(personalizados)) return null;
+    return personalizados.find((modelo) => modelo?.titulo === motivo) || null;
+  },
+
+  comporModelos: function(personalizados = [], substituicoes = [], ocultos = []) {
+    const ocultosSet = new Set(Array.isArray(ocultos) ? ocultos : []);
+    const substituicoesMap = new Map(
+      (Array.isArray(substituicoes) ? substituicoes : []).map((modelo) => [modelo.original, modelo])
+    );
+    const oficiais = Object.entries(this.descricoesPorMotivo)
+      .filter(([titulo]) => !ocultosSet.has(titulo))
+      .map(([titulo, modelo]) => {
+        const alteracao = substituicoesMap.get(titulo);
+        return { titulo: alteracao?.titulo || titulo, abertura: alteracao?.abertura || modelo.abertura, fechamento: alteracao?.fechamento ?? modelo.fechamento, oficial: true, original: titulo };
+      });
+    const titulosOficiais = new Set(oficiais.map((modelo) => modelo.titulo));
+    const novos = (Array.isArray(personalizados) ? personalizados : [])
+      .filter((modelo) => modelo?.titulo && !titulosOficiais.has(modelo.titulo))
+      .map((modelo) => ({ ...modelo, oficial: false }));
+    return [...oficiais, ...novos];
   }
 };
